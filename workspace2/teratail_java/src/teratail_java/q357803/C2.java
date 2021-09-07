@@ -61,40 +61,43 @@ public class C2 {
       drawForwardEvent(g, random, used);
     }
 
+    private static final int SIZE=50, COUNT=9, XOFF=50, YOFF=100;
     //番号・点線
     private void drawNumberAndDotLine(Graphics g) {
-      Graphics2D g2 = (Graphics2D)g.create();
-      g2.setStroke(new BasicStroke(0, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 1, new float[]{5}, 0));
-
       Set<Point> used = new HashSet<>();
 
-      Turtle turtle = new Turtle(9/2, 9/2, Turtle.Direction.EAST, new Turtle.Confirm() {
+      Turtle turtle = new Turtle(COUNT/2, COUNT/2, Turtle.Direction.EAST, new Turtle.Confirm() {
         @Override
         public boolean isSafe(int x, int y) {
-          if(used.contains(new Point(x,y))) return false; //既に通った
-          return true;
+          return !used.contains(new Point(x,y)); //まだ通ってない
         }
       });
 
+      Graphics2D g2 = (Graphics2D)g.create();
+      g2.setStroke(new BasicStroke(0, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 1, new float[]{5}, 0)); //点線
+
       Point prev = null;
-      for(int number=1; number<=9*9; turtle.forward(), number++) {
+      for(int number=1; number<=COUNT*COUNT; turtle.forward(), number++) {
         Point point = new Point(turtle.getX(), turtle.getY());
-        used.add(point);
-        g2.drawString(""+number, point.x*50+35+50, point.y*50+45+100); //番号
-        if(prev != null) g2.drawLine(prev.x*50+50+25, prev.y*50+100+25, point.x*50+50+25, point.y*50+100+25);
+        used.add(point); //通ったことを登録
+        point = center(point);
+        g2.drawString(""+number, point.x+10, point.y+20); //番号
+        if(prev != null) g2.drawLine(prev.x, prev.y, point.x, point.y); //点線
         prev = point;
       }
-      g2.drawLine(prev.x*50+50+25, prev.y*50+100+25, prev.x*50+50+50, prev.y*50+100+25); //最後だけ特別(ゴールへの接続)
+      g2.drawLine(prev.x, prev.y, prev.x+SIZE/2, prev.y); //最後だけ特別(ゴールへの接続)
 
       g2.dispose();
     }
+    //マスの中央座標に変換
+    private Point center(Point p) { return new Point(p.x*SIZE+SIZE/2+XOFF, p.y*SIZE+SIZE/2+YOFF); }
 
     private void drawForwardEvent(Graphics g, Random random, Set<Point> used) {
       Point point = new Point(random.nextInt(9), random.nextInt(9));
       if (!used.contains(point)) {
         used.add(point);
         int p = random.nextInt(5) + 2;
-        g.drawString("+" + p + "マス", 50 * point.x + 5, 50 * point.y + 15);
+        g.drawString("+" + p + "マス", point.x*SIZE + 5 + XOFF, point.y*SIZE + 15 + YOFF);
       }
     }
 
@@ -102,56 +105,18 @@ public class C2 {
       Point point = new Point(random.nextInt(8), random.nextInt(9));
       if (!used.contains(point)) {
         used.add(point);
-        g.drawString("盤面", 50 * point.x + 5, 50 * point.y + 15);
-        g.drawString(text, 50 * point.x + 5, 50 * point.y + 28);
+        g.drawString("盤面", point.x*SIZE + 5 + XOFF, point.y*SIZE + 15 + YOFF);
+        g.drawString(text, point.x*SIZE + 5 + XOFF, point.y*SIZE + 28 + YOFF);
       }
     }
 
     private void drawToLeftEvent(Graphics g, Random random, Set<Point> used) {
-      Point qr = new Point(random.nextInt(9), random.nextInt(9));
+      Point qr = new Point(random.nextInt(7)+2, random.nextInt(9));
       if (!used.contains(qr)) {
         used.add(qr);
-        g.drawString("2マス", 50 * qr.x + 5, 50 * qr.y + 15);
-        g.drawString("左へ", 50 * qr.x + 5, 50 * qr.y + 25);
+        g.drawString("2マス", qr.x*SIZE + 5 + XOFF, qr.y*SIZE + 15 + YOFF);
+        g.drawString("左へ", qr.x*SIZE + 5 + XOFF, qr.y*SIZE + 25 + YOFF);
       }
-    }
-  }
-
-  //右好きの亀さん
-  private static class Turtle {
-    interface Confirm {
-      //安全確認. x,y にマイナスや大きな値が入っても例外を出さないよう注意.
-      boolean isSafe(int x, int y);
-    }
-    enum Direction {
-      NORTH(0,-1) { Direction right() { return EAST; } },
-      SOUTH(0, 1) { Direction right() { return WEST; } },
-      EAST( 1,0) { Direction right() { return SOUTH; } },
-      WEST(-1,0) { Direction right() { return NORTH; } };
-
-      final int dx, dy;
-      Direction(int dx, int dy) {
-        this.dx = dx;
-        this.dy = dy;
-      }
-      abstract Direction right();
-    }
-    private int x, y;
-    private Direction dir;
-    private Confirm confirm;
-    Turtle(int x, int y, Direction dir, Confirm confirm) {
-      this.x = x;
-      this.y = y;
-      this.dir = dir;
-      this.confirm = confirm;
-    }
-    int getX() { return x; }
-    int getY() { return y; }
-    void forward() {
-      x += dir.dx;
-      y += dir.dy;
-      Direction sence = dir.right(); //この辺が右好き
-      if(confirm.isSafe(x+sence.dx, y+sence.dy)) dir = sence;
     }
   }
 }
