@@ -7,18 +7,21 @@ class Turtle {
     boolean isSafe(int x, int y);
   }
   enum Direction {
-    NORTH(0,-1), /*右回りに定義すること*/
-    EAST(1,0),
-    SOUTH(0,1),
-    WEST(-1,0);
+    NORTH(0,-1, 1,3),
+    EAST(1,0, 2,0),
+    SOUTH(0,1, 3,1),
+    WEST(-1,0, 0,2);
 
     final int dx, dy;
-    Direction(int dx, int dy) {
+    private int right, left;
+    Direction(int dx, int dy, int right, int left) {
       this.dx = dx;
       this.dy = dy;
+      this.right = right;
+      this.left = left;
     }
-    Direction right() { return values()[(ordinal()+1)%values().length]; }
-    Direction left() { return values()[(ordinal()-1+values().length)%values().length]; }
+    Direction right() { return values()[right]; }
+    Direction left() { return values()[left]; }
   }
   private int x, y;
   private Turtle.Direction dir;
