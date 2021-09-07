@@ -1,12 +1,13 @@
 package teratail_java.q357803;
 
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.geom.Rectangle2D;
 import java.util.*;
 import java.util.List;
 
-import javax.swing.JFrame;
-import javax.swing.JPanel;
+import javax.swing.*;
 
 public class GameFrame extends JFrame {
   public static void main(String[] args) {
@@ -28,10 +29,37 @@ public class GameFrame extends JFrame {
     gbc.gridy = 0;
     gbc.gridwidth = 1;
     gbc.gridheight = 1;
+    gbc.weightx = 1;
+    gbc.weighty = 1;
     gbc.anchor = GridBagConstraints.CENTER;
-    add(new GamePanel(50, 9), gbc); //描画領域の追加
-  }
+    GamePanel gamePanel = new GamePanel(50, 9);
+    add(gamePanel, gbc); //描画領域の追加
 
+    JPanel buttonsPanel = new JPanel();
+    buttonsPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    gbc.gridx = 0;
+    gbc.gridy = 1;
+    gbc.weighty = 0;
+    add(buttonsPanel, gbc);
+
+    JButton rotate90Button = new JButton("回転90°");
+    buttonsPanel.add(rotate90Button);
+    rotate90Button.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        gamePanel.rotate90();
+      }
+    });
+
+    JButton forwardButton = new JButton("進む");
+    buttonsPanel.add(forwardButton);
+    forwardButton.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        gamePanel.forward();
+      }
+    });
+  }
 
   //イベント
   private static class Event {
@@ -87,6 +115,7 @@ public class GameFrame extends JFrame {
     private Random random = new Random();
     private final int square_size;
     private final int square_count;
+    private Piece red;
 
     GamePanel(int square_size, int square_count) {
       super(null);
@@ -108,6 +137,55 @@ public class GameFrame extends JFrame {
       setForwardingEvent(); //"進む"イベント(4)
       setForwardingEvent(); //"進む"イベント(5)
       setForwardingEvent(); //"進む"イベント(6)
+
+      red = new Piece(Color.RED, 1);
+    }
+
+    void rotate90() {
+      red.rotateLocation();
+      repaint();
+    }
+    void forward() {
+      int i = red.getLocation();
+      red.setLocation(i+1);
+      repaint();
+    }
+
+    int findIndexByXY(int x, int y) {
+      Point p = new Point(x, y);
+      for(int i=0; i<squareList.size(); i++) {
+        if(squareList.get(i).equals(p)) return i;
+      }
+      return -1;
+    }
+
+    //駒(テスト用)
+    private class Piece {
+      private int location; //1～square_count^2
+      private Color color;
+      Piece(Color color, int location) {
+        this.color = color;
+        this.location = location;
+      }
+      void setLocation(int location) { this.location = location; }
+      int getLocation() { return location; }
+      void rotateLocation() {
+        if(location < 1 || square_count*square_count < location) return; //ガード
+        Square s = squareList.get(location-1);
+        int x = s.y;
+        int y = square_count - 1 - s.x;
+        location = findIndexByXY(x, y) + 1;
+      }
+      void draw(Graphics g, int dx, int dy) {
+        if(location < 1 || square_count*square_count < location) return; //ガード
+        Square s = squareList.get(location-1);
+        Graphics g2 = g.create();
+        g2.setColor(color);
+        g2.fillOval(s.gx+dx, s.gy+dy, square_size/5, square_size/5);
+        g2.setColor(Color.BLACK);
+        g2.drawOval(s.gx+dx, s.gy+dy, square_size/5, square_size/5);
+        g2.dispose();
+      }
     }
 
     //マス
@@ -220,6 +298,8 @@ public class GameFrame extends JFrame {
         Event e = entry.getValue();
         e.draw(g, p.x*square_size, p.y*square_size);
       }
+
+      red.draw(g, 20, 20);
     }
   }
 }
