@@ -87,18 +87,31 @@ public class ShootingGame extends JFrame {
       abstract public boolean draw(Graphics g);
     }
 
+
+    interface Callback {
+      void postDraw(Object obj);
+    }
+
     //爆発
-    class Explosion extends Background {
+    private class Explosion extends Background {
+      static final int N = 4; // N回 draw 毎に絵が変わる
+      private Callback callback;
       Explosion(int cx, int cy, int cw, int ch) {
+        this(cx, cy, cw, ch, null);
+      }
+      Explosion(int cx, int cy, int cw, int ch, Callback callback) {
         super("Q358026_explosion.png");
-        max = h / w;
+        max = h / w * N;
         this.x = cx + (cw - w) / 2;
         this.y = cy + (ch - w) / 2;
+        this.callback = callback;
       }
       public boolean draw(Graphics g) {
-        int dy = (count/4) * w;
+        int dy = count / N * w;
         g.drawImage(image, x, y, x+w, y+w, 0, dy, w, dy+w, null);
-        return (++ count < max*4);
+        boolean b = (++count < max);
+        if(!b && callback != null) callback.postDraw(this);
+        return b;
       }
     }
 
@@ -246,9 +259,15 @@ public class ShootingGame extends JFrame {
         for(Character c : cList.toArray(new Character[0])) {
           if(c.getRectangle().intersects(myr)) { //敵衝突判定
             myc.state = 1; //ヤラレタ
-            bList.add(new Explosion(myc.x, myc.y, myc.w, myc.h)); //爆発
+            bList.add(new Explosion(myc.x, myc.y, myc.w, myc.h, new Callback() { //自機爆発
+              @Override
+              public void postDraw(Object obj) {
+                stop = true; //自機が爆発し(終わっ)たら停止
+                future.cancel(false);
+              }
+            }));
             cList.remove(c);
-            bList.add(new Explosion(c.x, c.y, c.w, c.h)); //爆発
+            bList.add(new Explosion(c.x, c.y, c.w, c.h)); //敵爆発
             break;
           }
         }
@@ -256,11 +275,12 @@ public class ShootingGame extends JFrame {
       repaint(); //再描画依頼
     }
 
+    private boolean stop = false;
     private ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private ScheduledFuture<?> future;
     @Override
     public void focusGained(FocusEvent e) {
-      future = scheduler.scheduleAtFixedRate(this, 0, 20, TimeUnit.MILLISECONDS);
+      if(!stop) future = scheduler.scheduleAtFixedRate(this, 0, 20, TimeUnit.MILLISECONDS);
     }
 
     @Override
