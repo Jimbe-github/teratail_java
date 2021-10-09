@@ -32,6 +32,7 @@ public class ShootingGame extends JFrame {
   //メインパネル
   private static class ShootingPanel extends JPanel implements FocusListener, Runnable {
 
+    //画像ロード担当
     private class ImageManager {
       private Map<String,BufferedImage> imageMap = new HashMap<>();
 
@@ -87,12 +88,11 @@ public class ShootingGame extends JFrame {
       abstract public boolean draw(Graphics g);
     }
 
-
     interface Callback {
       void postDraw(Object obj);
     }
 
-    //爆発
+    //爆発(背景)
     private class Explosion extends Background {
       static final int N = 4; // N回 draw 毎に絵が変わる
       private Callback callback;
