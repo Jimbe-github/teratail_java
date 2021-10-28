@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/">
+  <version>1.2</version>
+  <numberOfRecords>2</numberOfRecords>
+  <nextRecordPosition>0</nextRecordPosition>
+  <extraResponseData>
+&lt;facets&gt;
+  &lt;lst name=&quot;REPOSITORY_NO&quot;&gt;
+    &lt;int name=&quot;R100000001&quot;&gt;1&lt;/int&gt;
+    &lt;int name=&quot;R100000002&quot;&gt;1&lt;/int&gt;
+    &lt;int name=&quot;R100000096&quot;&gt;1&lt;/int&gt;
+  &lt;/lst&gt;
+  &lt;lst name=&quot;NDC&quot;&gt;
+    &lt;int name=&quot;0&quot;&gt;2&lt;/int&gt;
+  &lt;/lst&gt;
+  &lt;lst name=&quot;ISSUED_DATE&quot;&gt;
+    &lt;int name=&quot;2016&quot;&gt;2&lt;/int&gt;
+  &lt;/lst&gt;
+  &lt;lst name=&quot;LIBRARY&quot;&gt;
+    &lt;int name=&quot;さいたま市立中央図書館&quot;&gt;1&lt;/int&gt;
+    &lt;int name=&quot;千葉市中央図書館&quot;&gt;1&lt;/int&gt;
+    &lt;int name=&quot;国立国会図書館&quot;&gt;1&lt;/int&gt;
+    &lt;int name=&quot;堺市立中央図書館&quot;&gt;1&lt;/int&gt;
+    &lt;int name=&quot;大阪市立図書館&quot;&gt;1&lt;/int&gt;
+    &lt;int name=&quot;奈良県立図書情報館&quot;&gt;1&lt;/int&gt;
+    &lt;int name=&quot;島根県立図書館&quot;&gt;1&lt;/int&gt;
+    &lt;int name=&quot;川崎市立図書館&quot;&gt;1&lt;/int&gt;
+    &lt;int name=&quot;沖縄県立図書館&quot;&gt;1&lt;/int&gt;
+    &lt;int name=&quot;滋賀県立図書館&quot;&gt;1&lt;/int&gt;
+    &lt;int name=&quot;相模原市立図書館&quot;&gt;1&lt;/int&gt;
+    &lt;int name=&quot;福岡県立図書館&quot;&gt;1&lt;/int&gt;
+    &lt;int name=&quot;香川県立図書館&quot;&gt;1&lt;/int&gt;
+  &lt;/lst&gt;
+&lt;/facets&gt;
+  </extraResponseData>
+  <records>
+    <record>
+      <recordSchema>info:srw/schema/1/dc-v1.1</recordSchema>
+      <recordPacking>string</recordPacking>
+      <recordData>
+&lt;srw_dc:dc xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:srw_dc=&quot;info:srw/schema/1/dc-v1.1&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; xsi:schemaLocation=&quot;info:srw/schema/1/dc-v1.1 http://www.loc.gov/standards/sru/dc-schema.xsd&quot;&gt;
+  &lt;dc:title&gt;できるWindows10&lt;/dc:title&gt;
+  &lt;dc:creator&gt;法林岳之 [ほか] 著&lt;/dc:creator&gt;
+  &lt;dc:subject&gt;オペレーティングシステム&lt;/dc:subject&gt;
+  &lt;dc:description&gt;Home/Pro/Enterprise対応&lt;/dc:description&gt;
+  &lt;dc:description&gt;その他の著者: 一ケ谷兼乃, 清水理史, できるシリーズ編集部&lt;/dc:description&gt;
+  &lt;dc:publisher&gt;インプレス&lt;/dc:publisher&gt;
+  &lt;dc:language&gt;jpn&lt;/dc:language&gt;
+&lt;/srw_dc:dc&gt;
+      </recordData>
+      <recordPosition>1</recordPosition>
+    </record>
+    <record>
+      <recordSchema>info:srw/schema/1/dc-v1.1</recordSchema>
+      <recordPacking>string</recordPacking>
+      <recordData>
+&lt;srw_dc:dc xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:srw_dc=&quot;info:srw/schema/1/dc-v1.1&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; xsi:schemaLocation=&quot;info:srw/schema/1/dc-v1.1 http://www.loc.gov/standards/sru/dc-schema.xsd&quot;&gt;
+  &lt;dc:title&gt;できるWindows 10&lt;/dc:title&gt;
+  &lt;dc:creator&gt;法林岳之, 一ケ谷兼乃, 清水理史, できるシリーズ編集部 著&lt;/dc:creator&gt;
+  &lt;dc:subject&gt;オペレーティングシステム&lt;/dc:subject&gt;
+  &lt;dc:description&gt;Home/Pro/Enterprise対応&lt;/dc:description&gt;
+  &lt;dc:description&gt;索引あり&lt;/dc:description&gt;
+  &lt;dc:publisher&gt;インプレス&lt;/dc:publisher&gt;
+  &lt;dc:language&gt;jpn&lt;/dc:language&gt;
+&lt;/srw_dc:dc&gt;
+      </recordData>
+      <recordPosition>2</recordPosition>
+    </record>
+  </records>
+</searchRetrieveResponse>

@@ -1,0 +1,18 @@
+Directory: test
+D1はディレクトリです。
+D2はディレクトリです。
+F1.txtはファイルです。
+
+Directory: D1
+D3はディレクトリです。
+
+Directory: D2
+D4はディレクトリです。
+F2.txtはファイルです。
+
+Directory: D3
+空です
+
+Directory: D4
+F3.txtはファイルです。
+
