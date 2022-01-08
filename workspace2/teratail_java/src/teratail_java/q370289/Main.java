@@ -1,5 +1,7 @@
 package teratail_java.q370289;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -56,18 +58,28 @@ class Message {
   final int code;
   final String text;
   Message(String src, String dst, int code) {
-    this(src, dst, code, "");
+    this(src, dst, code, null);
   }
   Message(String src, String dst, int code, String text) {
     this.src = src;
     this.dst = dst;
     this.code = code;
+
+    if(text == null) {
+      switch(code) {
+        default: text = "";
+        case CODE_INVITE: text = "INVITE"; break;
+        case CODE_UNREGISTER: text = "UNREGISTER"; break;
+      }
+    }
     this.text = text;
+  }
+  public String getTextWithCode() {
+    return (code<=0?"":code+" ")+text;
   }
   @Override
   public String toString() {
-    return (code<=0?"":code+" ")+text;
-    //return "src='"+src+"', dst='"+dst+"', code="+code+", text='"+text+"'";
+    return "src='"+src+"', dst='"+dst+"', code="+code+", text='"+text+"'";
   }
 }
 
@@ -87,10 +99,10 @@ class Proxy implements Runnable {
             if(map.isEmpty()) break; //利用者が居なくなったら終了
           }
         } else {
-          getQueue(msg.dst).writeMessage(msg);
           if(msg.code == Message.CODE_INVITE) {
-            getQueue(msg.src).writeMessage(new Message(name, msg.src, 100, "Trying"));
+            send(new Message(name, msg.src, 100, "Trying"));
           }
+          getQueue(msg.dst).writeMessage(msg);
         }
       }
     } catch (InterruptedException e) {
@@ -110,14 +122,21 @@ class Proxy implements Runnable {
   }
 
   public void send(Message msg) throws InterruptedException {
-    if(!msg.src.equals(name) && !msg.dst.equals(name)) {
-      System.out.println(msg.src + " send: " + msg);
+    if(!msg.src.equals(name) && !msg.dst.equals(name)) { //Proxy[から|へ]は表示しない
+      printLog(msg.src + " send: " + msg.getTextWithCode());
     }
     accept.writeMessage(msg);
   }
 
-  public Message recv(String src) throws InterruptedException {
-    return getQueue(src).readMessage();
+  public Message recv(String name) throws InterruptedException {
+    Message msg = getQueue(name).readMessage();
+    printLog(name + " recv: " + msg.getTextWithCode());
+    return msg;
+  }
+
+  private void printLog(String log) {
+    String time = DateTimeFormatter.ofPattern("HH:mm:ss ").format(LocalDateTime.now());
+    System.out.println(time + log);
   }
 }
 
@@ -132,13 +151,13 @@ class Asan implements Runnable {
 
   public void run() {
     try {
-      proxy.send(new Message(name, Bsan.name, Message.CODE_INVITE, "INVITE"));
+      proxy.send(new Message(name, Bsan.name, Message.CODE_INVITE));
       Thread.sleep(1000);
-      System.out.println(name + " recv: " + proxy.recv(name));
+      proxy.recv(name); //Trying?
       Thread.sleep(1000);
-      System.out.println(name + " recv: " + proxy.recv(name));
+      proxy.recv(name); //Ringing?
       Thread.sleep(5000);
-      System.out.println(name + " recv: " + proxy.recv(name));
+      proxy.recv(name); //OK?
 
       proxy.send(new Message(name, Proxy.name, Message.CODE_UNREGISTER));
     } catch (Exception e) {
@@ -159,12 +178,11 @@ class Bsan implements Runnable {
   public void run() {
     try {
       Thread.sleep(1000);
-      Message recv = proxy.recv(name);
-      System.out.println(name + " recv: " + recv);
+      Message recvMsg = proxy.recv(name); //INVITE?
       Thread.sleep(1000);
-      proxy.send(new Message(name, recv.src, 180, "Ringing"));
+      proxy.send(new Message(name, recvMsg.src, 180, "Ringing"));
       Thread.sleep(3000);
-      proxy.send(new Message(name, recv.src, 200, "OK"));
+      proxy.send(new Message(name, recvMsg.src, 200, "OK"));
 
       proxy.send(new Message(name, Proxy.name, Message.CODE_UNREGISTER));
     } catch (Exception e) {
