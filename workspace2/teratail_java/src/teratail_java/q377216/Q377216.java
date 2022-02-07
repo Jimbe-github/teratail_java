@@ -222,37 +222,76 @@ class Machine extends JPanel implements Repeater {
 }
 
 class Conveyor extends JPanel implements Repeater {
-  private enum Axis { X_AXIS, Y_AXIS } //縦横
+  private static final int BOARD_SIZE = 5;
+  private static final int BOARD_THICK = 2;
+  private static final int TRANSPORT_STEP = 2;
+
+  private enum Axis { //縦横
+    X_AXIS {
+      void drawDotLine(Graphics g, JComponent c, int y, int offset) {
+        for(int x=offset; x<c.getWidth(); x+=BOARD_SIZE*2) {
+          g.fillRect(x, y, BOARD_SIZE, BOARD_THICK);
+        }
+      }
+    },
+    Y_AXIS {
+      void drawDotLine(Graphics g, JComponent c, int x, int offset) {
+        for(int y=offset; y<c.getHeight(); y+=BOARD_SIZE*2) {
+          g.fillRect(x, y, BOARD_THICK, BOARD_SIZE);
+        }
+      }
+    };
+
+    abstract void drawDotLine(Graphics g, JComponent c, int axisCoordinates, int offset);
+  }
   enum FlowDir { //何処から何処へ流れるか
-    BottomToTop(Axis.Y_AXIS, 0,-1), LeftToRight(Axis.X_AXIS, 1, 0),
-    TopToBottom(Axis.Y_AXIS, 0, 1), RightToLeft(Axis.X_AXIS,-1, 0);
+    BottomToTop(Axis.Y_AXIS,-1) { int selectFirst(int t, int b) { return b; } },
+    LeftToRight(Axis.X_AXIS, 1) { int selectFirst(int l, int r) { return l; } },
+    TopToBottom(Axis.Y_AXIS, 1) { int selectFirst(int t, int b) { return t; } },
+    RightToLeft(Axis.X_AXIS,-1) { int selectFirst(int l, int r) { return r; } };
+
     final Axis axis;
-    final int sx, sy;
-    FlowDir(Axis axis, int sx, int sy) {
+    final int deltaSign;
+    FlowDir(Axis axis, int deltaSign) {
       this.axis = axis;
-      this.sx = sx;
-      this.sy = sy;
+      this.deltaSign = deltaSign;
     }
-    int moveX(int x, int dx) { return x+(dx*sx); }
-    int moveY(int y, int dy) { return y+(dy*sy); }
+    abstract int selectFirst(int leftTop, int rightBottom);
+    int move(int v, int delta) { return v+(delta*deltaSign); }
   }
   enum Anchor { //どの辺に沿って描画するか
-    NORTH(Axis.X_AXIS), EAST(Axis.Y_AXIS),
-    SOUTH(Axis.X_AXIS), WEST(Axis.Y_AXIS);
+    NORTH(Axis.X_AXIS) {
+      int getAxisCoordinates(JComponent c) { return 0; }
+      int getMaterialAxisCoordinates(JComponent c, int height) { return BOARD_THICK; }
+    },
+    EAST(Axis.Y_AXIS)  {
+      int getAxisCoordinates(JComponent c) { return c.getWidth() - BOARD_THICK; }
+      int getMaterialAxisCoordinates(JComponent c, int width) { return  c.getWidth() - BOARD_THICK - width; }
+    },
+    SOUTH(Axis.X_AXIS) {
+      int getAxisCoordinates(JComponent c) { return c.getHeight() - BOARD_THICK; }
+      int getMaterialAxisCoordinates(JComponent c, int height) { return c.getHeight() - BOARD_THICK - height; }
+    },
+    WEST(Axis.Y_AXIS)  {
+      int getAxisCoordinates(JComponent c) { return 0; }
+      int getMaterialAxisCoordinates(JComponent c, int width) { return BOARD_THICK; }
+    };
+
     final Axis axis;
     Anchor(Axis axis) {
       this.axis = axis;
     }
+    //点線 軸座標(縦なら X 軸, 横なら Y 軸の座標)
+    abstract int getAxisCoordinates(JComponent c);
+    //材料 軸座標(縦なら X 軸, 横なら Y 軸の座標)
+    abstract int getMaterialAxisCoordinates(JComponent c, int size);
   }
-  private static final int BOARD_SIZE = 5;
-  private static final int BOARD_THICK = 2;
-  private static final int TRANSPORT_STEP = 2;
 
   private Anchor anchor = Anchor.SOUTH;
   private FlowDir flowdir = FlowDir.LeftToRight;
   private ArrayList<Material> mlist = new ArrayList<Material>();
   private Thread thread;
-  private int offsetX = 0, offsetY = 0;
+  private int offset = 0;
   private InGate nextGate;
 
   Conveyor(Anchor anchor, FlowDir flowdir) {
@@ -271,47 +310,36 @@ class Conveyor extends JPanel implements Repeater {
 
   @Override
   public void set(Material m) {
-    setPosition(m);
+    m.setX(getMaterialX(m.getWidth()));
+    m.setY(getMaterialY(m.getHeight()));
     synchronized(mlist) {
       mlist.add(m);
     }
   }
 
-  private void setPosition(Material m) {
-    if(flowdir == FlowDir.LeftToRight) {
-      m.setX(- m.getWidth());
-    } else if(flowdir == FlowDir.RightToLeft) {
-      m.setX(getWidth());
-    } else if(anchor == Anchor.WEST) {
-      m.setX(BOARD_THICK);
-    } else { //anchor == Anchor.EAST
-      m.setX(getWidth() - BOARD_THICK - m.getWidth());
-    }
-    if(flowdir == FlowDir.TopToBottom) {
-      m.setY(- m.getHeight());
-    } else if(flowdir == FlowDir.BottomToTop) {
-      m.setY(getHeight());
-    } else if(anchor == Anchor.NORTH) {
-      m.setY(BOARD_THICK);
-    } else { //anchor == Anchor.SOUTH
-      m.setY(getHeight() - BOARD_THICK - m.getHeight());
-    }
+  private int getMaterialX(int width) {
+    if(flowdir.axis == Axis.X_AXIS) return flowdir.selectFirst(-width, getWidth());
+    return anchor.getMaterialAxisCoordinates(this, width);
+  }
+
+  private int getMaterialY(int height) {
+    if(flowdir.axis == Axis.Y_AXIS) return flowdir.selectFirst(-height, getHeight());
+    return anchor.getMaterialAxisCoordinates(this, height);
   }
 
   private void move() {
-    offsetX = flowdir.moveX(offsetX, TRANSPORT_STEP);
-    if(offsetX <= -BOARD_SIZE) offsetX += BOARD_SIZE*2;
-    else if(offsetX >= BOARD_SIZE) offsetX -= BOARD_SIZE*2;
-
-    offsetY = flowdir.moveY(offsetY, TRANSPORT_STEP);
-    if(offsetY <= -BOARD_SIZE) offsetY += BOARD_SIZE*2;
-    else if(offsetY >= BOARD_SIZE) offsetY -= BOARD_SIZE*2;
+    offset = flowdir.move(offset, TRANSPORT_STEP);
+    if(offset <= -BOARD_SIZE) offset += BOARD_SIZE*2;
+    else if(offset >= BOARD_SIZE) offset -= BOARD_SIZE*2;
 
     synchronized(mlist) {
       for(Iterator<Material> ite=mlist.iterator(); ite.hasNext(); ) {
         Material m = ite.next();
-        m.setX(flowdir.moveX(m.getX(), TRANSPORT_STEP));
-        m.setY(flowdir.moveY(m.getY(), TRANSPORT_STEP));
+        if(anchor.axis == Axis.X_AXIS) {
+          m.setX(flowdir.move(m.getX(), TRANSPORT_STEP));
+        } else {
+          m.setY(flowdir.move(m.getY(), TRANSPORT_STEP));
+        }
 
         if(!getRectangle().intersects(m.getRectangle())) {
           ite.remove();
@@ -360,17 +388,7 @@ class Conveyor extends JPanel implements Repeater {
     super.paintComponent(g);
 
     g.setColor(Color.BLACK);
-    if(anchor.axis == Axis.X_AXIS) {
-      int y = anchor == Anchor.NORTH ? 0 : getHeight() - BOARD_THICK;
-      for(int x=offsetX; x<getWidth(); x+=BOARD_SIZE*2) {
-        g.fillRect(x, y, BOARD_SIZE, BOARD_THICK);
-      }
-    } else {
-      int x = anchor == Anchor.WEST ? 0 : getWidth() - BOARD_THICK;
-      for(int y=offsetY; y<getHeight(); y+=BOARD_SIZE*2) {
-        g.fillRect(x, y, BOARD_THICK, BOARD_SIZE);
-      }
-    }
+    anchor.axis.drawDotLine(g, this, anchor.getAxisCoordinates(this), offset);
 
     synchronized(mlist) {
       for(Material m : mlist) m.paint(g);
