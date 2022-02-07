@@ -1,8 +1,7 @@
 package teratail_java.q_ma9cgl882hfegi;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -23,51 +22,18 @@ class MachineDialog extends JDialog {
     setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
     setResizable(false);
 
-    //ESC キーで CANCEL
-    InputMap imap = getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
-    imap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "dispose");
-    getRootPane().getActionMap().put("dispose", new AbstractAction() {
-      @Override public void actionPerformed(ActionEvent e) {
-        dispose();
-      }
-    });
-
     InputPanel inputPanel = new InputPanel(machine);
     inputPanel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
     add(inputPanel, BorderLayout.CENTER);
 
-    JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.TRAILING, 10, 0));
+    JPanel buttonPanel = new ButtonPanel(inputPanel, manager);
     buttonPanel.setBorder(BorderFactory.createEmptyBorder(10,10,10,0));
-
-    JButton okButton = new JButton("OK");
-    getRootPane().setDefaultButton(okButton); //ENTER キーで OK
-    okButton.addActionListener((ae) -> {
-      try {
-        manager.put(inputPanel.get());
-        dispose();
-      } catch(InputPanel.VaridateException e) {
-      }
-    });
-    buttonPanel.add(okButton);
-
-    JButton cancelButton = new JButton("キャンセル");
-    cancelButton.addActionListener((e) -> dispose());
-    buttonPanel.add(cancelButton);
-
-    new SizeMatcher(okButton, cancelButton); //ボタンを同じ大きさにする
-
     add(buttonPanel, BorderLayout.SOUTH);
 
     pack();
   }
 
   private static class InputPanel  extends JPanel {
-    static class VaridateException extends Exception {
-      VaridateException(Throwable cause) {
-        super(cause);
-      }
-    }
-
     private String name;
     private ValidatableField outputField;
     private OilTypePanel oilTypePanel;
@@ -83,7 +49,7 @@ class MachineDialog extends JDialog {
       gbc.fill = GridBagConstraints.HORIZONTAL;
 
       gbc.gridy = 0;
-      appendLabelTo(gbc, "名称");
+      addLabel(gbc, "名称");
       JTextField nameText = new JTextField(name);
       nameText.setFocusable(false);
       nameText.setEditable(false);
@@ -93,7 +59,7 @@ class MachineDialog extends JDialog {
       add(Box.createVerticalStrut(8), gbc);
 
       gbc.gridy ++;
-      JLabel outputLabel = appendLabelTo(gbc, "ワット数");
+      JLabel outputLabel = addLabel(gbc, "ワット数");
       JTextField outputText = new JTextField(""+machine.output);
       add(outputText, gbc);
       outputField = new ValidatableField(outputText, outputLabel);
@@ -114,13 +80,13 @@ class MachineDialog extends JDialog {
       add(Box.createVerticalStrut(8), gbc);
 
       gbc.gridy ++;
-      JLabel oilAmountLabel = appendLabelTo(gbc, "油の残量");
+      JLabel oilAmountLabel = addLabel(gbc, "油の残量");
       JTextField oilAmountText = new JTextField(""+machine.oilAmount);
       add(oilAmountText, gbc);
       oilAmountField = new ValidatableField(oilAmountText, oilAmountLabel);
     }
 
-    private JLabel appendLabelTo(GridBagConstraints gbc, String labelText) {
+    private JLabel addLabel(GridBagConstraints gbc, String labelText) {
       JLabel label = new JLabel(labelText + ":");
       label.setHorizontalAlignment(JLabel.RIGHT);
       Insets backup = gbc.insets;
@@ -130,55 +96,114 @@ class MachineDialog extends JDialog {
       return label;
     }
 
-    Machine get() throws VaridateException {
+    Machine getNewObject() {
       int output = outputField.getInt();
       OilType oilType = oilTypePanel.getOilType();
       int oilAmount = oilAmountField.getInt();
+      if(!outputField.isValid() || !oilAmountField.isValid()) return null;
       return new Machine(name, output, oilType, oilAmount);
     }
+  }
 
-    private static class ValidatableField {
-      private JTextField textField;
-      private JLabel label;
-      private Color normal;
-      ValidatableField(JTextField textField, JLabel label) {
-        this.textField = textField;
-        this.label = label;
-        this.normal = label.getForeground();
+  private static class ValidatableField {
+    private JTextField textField;
+    private JLabel label;
+    private Color normal;
+    private boolean valid;
+
+    ValidatableField(JTextField textField, JLabel label) {
+      this.textField = textField;
+      this.label = label;
+      this.normal = label.getForeground();
+    }
+
+    int getInt() {
+      try {
+        valid = true;
+        label.setForeground(normal);
+        return Integer.parseInt(textField.getText().trim());
+      } catch(Exception e) {
+        //No process
       }
-      private int getInt() throws VaridateException {
-        try {
-          label.setForeground(normal);
-          return Integer.parseInt(textField.getText().trim());
-        } catch(NumberFormatException e) {
-          textField.requestFocus();
-          label.setForeground(Color.RED);
-          throw new VaridateException(e);
-        }
+      valid = false;
+      textField.requestFocus();
+      label.setForeground(Color.RED);
+      return 0;
+    }
+
+    boolean isValid() {
+      return valid;
+    }
+  }
+
+  private static class OilTypePanel extends JPanel {
+    private OilType oilType;
+
+    OilTypePanel(OilType oilType) {
+      super(new GridLayout(0, 4)); //cols はテキトウ
+
+      this.oilType = oilType;
+
+      ActionListener oilTypeActionListener = (e) -> {
+        String buttonText = ((JRadioButton)e.getSource()).getText();
+        this.oilType = OilType.valueOf(buttonText);
+      };
+
+      ButtonGroup group = new ButtonGroup();
+      for(OilType type : OilType.values()) {
+        JRadioButton button = new JRadioButton(type.toString());
+        button.addActionListener(oilTypeActionListener);
+        if(type == oilType) button.setSelected(true);
+        group.add(button);
+        add(button);
       }
     }
 
-    private static class OilTypePanel extends JPanel {
-      private OilType oilType;
+    OilType getOilType() {
+      return oilType;
+    }
+  }
 
-      OilTypePanel(OilType oilType) {
-        super(new GridLayout(0, 4)); //cols はテキトウ
+  private class ButtonPanel extends JPanel {
+    ButtonPanel(InputPanel inputPanel, MachineManager manager) {
+      super(new FlowLayout(FlowLayout.TRAILING, 10, 0));
 
-        this.oilType = oilType;
+      JButton okButton = new JButton("OK");
+      okButton.addActionListener((ae) -> {
+        Machine machine = inputPanel.getNewObject();
+        if(machine == null) return; //入力に問題があった
+        manager.put(machine);
+        dispose();
+      });
+      add(okButton);
 
-        ButtonGroup group = new ButtonGroup();
-        for(OilType type : OilType.values()) {
-          JRadioButton button = new JRadioButton(type.toString());
-          button.addActionListener((e) -> this.oilType = OilType.valueOf(((JRadioButton)e.getSource()).getText()));
-          if(type == oilType) button.setSelected(true);
-          group.add(button);
-          add(button);
+      Action cancelAction = new AbstractAction() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          dispose();
         }
-      }
+      };
 
-      OilType getOilType() {
-        return oilType;
-      }
+      JButton cancelButton = new JButton("キャンセル");
+      cancelButton.addActionListener(cancelAction);
+      add(cancelButton);
+
+      new SizeMatcher(okButton, cancelButton); //ボタンを同じ大きさにする
+
+      //フォーカスに関係無く動作するキーを設定
+      setDefaultKey(okButton, cancelAction);
+    }
+
+    private void setDefaultKey(JButton ok, Action cancel) {
+      JRootPane dialogRootPane = MachineDialog.this.getRootPane();
+
+      //ENTER キーで OK
+      dialogRootPane.setDefaultButton(ok);
+
+      //ESC キーで CANCEL
+      InputMap imap = dialogRootPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+      imap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "cancel");
+      dialogRootPane.getActionMap().put("cancel", cancel);
     }
   }
 }

@@ -28,9 +28,8 @@ public class MainFrame extends JFrame {
       MachinePanel panel = new MachinePanel(model.get(i).name, model);
       tabbedPane.addTab(panel.name, panel);
     }
-    tabbedPane.addTab("情報", new InfoPanel(model, (machine) -> {
-      //クリック
-      JDialog dialog = MachineDialog.createInstance(MainFrame.this, machine, (m)->model.put(m));
+    tabbedPane.addTab("情報", new InfoPanel(model, (selected) -> {
+      JDialog dialog = MachineDialog.createInstance(MainFrame.this, selected, (newObject)->model.put(newObject));
       dialog.setLocationRelativeTo(null);
       dialog.setVisible(true);
     }));
@@ -106,10 +105,10 @@ class InfoPanel extends JPanel {
 //機械情報テーブルモデル
 class InfoTableModel extends AbstractTableModel {
   enum Columns {
-    NAME("", String.class) { @Override Object get(Machine m) { return m.name; } },
-    OUTPUT("ワット数", Integer.class) { @Override Object get(Machine m) { return m.output; } },
-    OIL_TYPE("油の種類", OilType.class) { @Override Object get(Machine m) { return m.oilType; } },
-    OIL_AMOUNT("油の残量", Integer.class) { @Override Object get(Machine m) { return m.oilAmount; } };
+    NAME("", String.class) { @Override Object getFieldValue(Machine m) { return m.name; } },
+    OUTPUT("ワット数", Integer.class) { @Override Object getFieldValue(Machine m) { return m.output; } },
+    OIL_TYPE("油の種類", OilType.class) { @Override Object getFieldValue(Machine m) { return m.oilType; } },
+    OIL_AMOUNT("油の残量", Integer.class) { @Override Object getFieldValue(Machine m) { return m.oilAmount; } };
 
     String name;
     Class<?> clazz;
@@ -117,7 +116,7 @@ class InfoTableModel extends AbstractTableModel {
       this.name = name;
       this.clazz = clazz;
     }
-    Object get(Machine m) { return null; }
+    Object getFieldValue(Machine m) { return null; }
 
     static int size() { return values().length; }
     static Columns get(int index) { return values()[index]; };
@@ -156,6 +155,7 @@ class InfoTableModel extends AbstractTableModel {
 
   @Override
   public Object getValueAt(int rowIndex, int columnIndex) {
-    return Columns.get(columnIndex).get(model.get(rowIndex));
+    Machine machine = model.get(rowIndex);
+    return Columns.get(columnIndex).getFieldValue(machine);
   }
 }
